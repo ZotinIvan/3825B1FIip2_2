@@ -228,6 +228,20 @@ private:
         }
     }
 
+    void insert(const Film& film) {
+        size_t pos = 0;
+        while (pos < count && lib[pos] < film) {
+            pos++;
+        }
+
+        for (size_t i = count; i > pos; --i) {
+            lib[i] = lib[i - 1];
+        }
+
+        lib[pos] = film;
+        count++;
+    }
+
     void resize(size_t n) {
         Film* nlib = new Film[n];
         size_t cs;
@@ -347,10 +361,8 @@ public:
         }
 
         Film f(nm, dr, sc, cm, ch, d, m, y);
-        lib[count] = f;
-        count++;
+        insert(f);
         cout << "Movie added\n";
-        sort();
     }
 
     void rewrite() {
@@ -392,16 +404,20 @@ public:
                         string value;
                         unsigned nd, nmonth, newyear;
                         long long ncharge;
+                        Film newfilm = lib[k];
 
                         switch (a) {
                         case 1:
                             cout << "Enter name film: ";
                             cin.ignore();
                             getline(cin, value);
-                            lib[k].setname(value);
-                            sort();
+                            newfilm.setname(value);
+                            for (size_t i = k; i < count - 1; ++i) {
+                                lib[i] = lib[i + 1];
+                            }
+                            count--;
+                            insert(newfilm);
                             cout << "Name updated\n";
-                            return;
                         case 2:
                             cout << "Enter name of director: ";
                             cin.ignore();
@@ -459,8 +475,12 @@ public:
                                     cout << "Invalid input! Enter three numbers (day month year): ";
                                 }
                             }
-                            lib[k].setdate(nd, nmonth, newyear);
-                            sort();
+                            newfilm.setdate(nd, nmonth, newyear);
+                            for (size_t i = k; i < count - 1; ++i) {
+                                lib[i] = lib[i + 1];
+                            }
+                            count--;
+                            insert(newfilm);
                             cout << "Date updated\n";
                             return;
                         case 7:
@@ -617,7 +637,78 @@ public:
         for (size_t k = 0; k < n; ++k) {
             temp[k].printfilm();
         }
+        delete[] temp;
+    }
 
+    void maxcharge_in_year() {
+        if (is_empty())
+            return;
+
+        unsigned y;
+        cout << "Enter year: \n";
+        do {
+            if (cin >> y) {
+                if (y >= 1900 && y <= 2026) {
+                    break;
+                }
+                cout << "Enter number (1900 - 2026): ";
+            }
+            else {
+                cin.clear();
+                cin.ignore(10000, '\n');
+                cout << "Invalid input! Enter a positive number: ";
+            }
+        } while (true);
+
+        Film* temp = new Film[count];
+        size_t amount = 0;
+        for (size_t i = 0; i < count; ++i) {
+            if (lib[i].getyear() == y) {
+                temp[amount++] = lib[i];
+            }
+        }
+
+        if (amount == 0) {
+            cout << "There are no films this year\n";
+        }
+        else {
+            size_t n;
+            cout << "Enter number of films to display (max " << amount << "): ";
+
+            do {
+                if (cin >> n) {
+                    if (n >= 1) {
+                        break;
+                    }
+                    cout << "Invalid input! Enter a positive number: ";
+                }
+                else {
+                    cin.clear();
+                    cin.ignore(10000, '\n');
+                    cout << "Invalid input! Enter a positive number: ";
+                }
+            } while (true);
+
+            if (n > amount) {
+                cout << "There are only " << amount << " films in the filmoteka\n";
+                n = amount;
+            }
+
+
+            for (size_t i = 0; i < amount; ++i) {
+                for (size_t j = 0; j < amount - i - 1; ++j) {
+                    if (temp[j].getcharge() < temp[j + 1].getcharge()) {
+                        Film t = temp[j];
+                        temp[j] = temp[j + 1];
+                        temp[j + 1] = t;
+                    }
+                }
+            }
+            cout << "\n-------Top films in " << y << "------ - \n";
+            for (size_t k = 0; k < n; ++k) {
+                temp[k].printfilm();
+            }
+        }
         delete[] temp;
     }
 
@@ -741,10 +832,11 @@ int main() {
         cout << "4. give out all the films of the specified director\n";
         cout << "5. give out all the films released in the selected year\n";
         cout << "6. give out the set number of films with the highest fees\n";
-        cout << "7. find out the current number of films\n";
-        cout << "8. delete the film\n";
-        cout << "9. save the movie library to a file\n";
-        cout << "10. read the film library from the file\n";
+        cout << "7. give out a set number of films with the highest collections in the selected year\n";
+        cout << "8. find out the current number of films\n";
+        cout << "9. delete the film\n";
+        cout << "10. save the movie library to a file\n";
+        cout << "11. read the film library from the file\n";
         cout << "0. exit\n";
         cout << "Choice: ";
 
@@ -776,17 +868,20 @@ int main() {
             f.maxcharge();
             break;
         case 7:
-            f.print_count();
+            f.maxcharge_in_year();
             break;
         case 8:
-            f.remove_film();
+            f.print_count();
             break;
         case 9:
+            f.remove_film();
+            break;
+        case 10:
             cout << "Enter the file name to save: ";
             cin >> fname;
             f.write_in_file(fname);
             break;
-        case 10:
+        case 11:
             cout << "Enter the file name to load: ";
             cin >> fname;
             f.read_file(fname);
