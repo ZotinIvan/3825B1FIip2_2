@@ -25,12 +25,12 @@ protected:
     void set_n() {
         while (true) {
             cout << "Enter the length of the number: ";
-            if (cin >> n && n > 0) {
+            if (cin >> n && n > 0 && n <= 10) {
                 break;
             }
             cin.clear();
             cin.ignore(10000, '\n');
-            cout << "Enter a positive number\n";
+            cout << "Enter a positive number (<11)\n";
         }
         cin.ignore(10000, '\n');
     }
@@ -112,19 +112,17 @@ public:
     }
 
     void generate(size_t n) {
-        int a;
-        num[0] = rand() % 9 + 1;
+        int dig[10] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+        bool used[10] = { false };
+        int k = rand() % 9 + 1;
+        num[0] = dig[k];
+        used[k] = true;
         for (size_t i = 1; i < n; i++) {
-            a = rand() % 10;
-            for (size_t j = 0; j < i; j++) {
-                if (num[j] == a) {
-                    i--;
-                    break;
-                }
-                if (j == i - 1) {
-                    num[i] = a;
-                }
-            }
+            do {
+                k = rand() % 10;
+            } while (used[k]);
+            num[i] = dig[k];
+            used[k] = true;
         }
     }
 
@@ -136,7 +134,6 @@ public:
                 bulls++;
             }
         }
-
         for (size_t i = 0; i < n; i++) {
             if ((a[i] - '0') != num[i]) {
                 for (size_t j = 0; j < n; j++) {
@@ -151,12 +148,22 @@ public:
         return bulls == n;
     }
 
+    void resize(size_t a) {
+        if (a != m) {
+            delete[] num;
+            m = a;
+            if (m > 10) {
+                m = 10;
+            }
+            num = new int[m];
+        }
+    }
+
     ~Computer() {
         delete[] num;
     }
  
 };
-
 
 class Game: public Gamer, public Computer {
 public:
@@ -178,6 +185,7 @@ public:
             if (fl == "1") {
                 bulls = 0;
                 set_n();
+                resize(n);
             }
             else {
                 break;
